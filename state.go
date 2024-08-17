@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
 )
 
 type Player struct {
@@ -286,4 +288,37 @@ func (s *State) handleMessage(payload *Payload) error {
 	}
 
 	return nil
+}
+
+type CombatantSortOptions struct {
+	IncludeLimitBreak bool
+}
+
+// Return list of combatants currently in state, sorted by dps.
+func (s *State) GetSortedCombatants(opts CombatantSortOptions) []Combatant {
+	out := make([]Combatant, 0)
+
+	if s.CombatData == nil {
+		return out
+	}
+
+	combatants := make([]Combatant, 0, len(s.CombatData.Combatants))
+	for _, c := range s.CombatData.Combatants {
+		if c.Job == "Limit Break" && !opts.IncludeLimitBreak {
+			continue
+		}
+
+		combatants = append(combatants, c)
+	}
+
+	sort.Slice(
+		combatants,
+		func(i, j int) bool {
+			dpsI, _ := strconv.ParseFloat(combatants[i].DPS, 64)
+			dpsJ, _ := strconv.ParseFloat(combatants[j].DPS, 64)
+			return dpsI > dpsJ
+		},
+	)
+
+	return combatants
 }

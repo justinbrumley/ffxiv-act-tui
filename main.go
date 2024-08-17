@@ -110,18 +110,24 @@ func (s *State) View() string {
 	if s.CombatData != nil {
 		enc := s.CombatData.Encounter
 
-		out += "\n--------------------\n"
-		out += "# Encounter\n"
-		out += "--------------------\n"
+		out += "\n# Encounter\n\n"
 		out += fmt.Sprintf("Damage: %v\n", enc.Damage)
 		out += fmt.Sprintf("DPS: %v\n", enc.DPS)
 
-		combatants := s.CombatData.Combatants
-		out += "\n--------------------\n"
-		out += "# Combatants\n"
-		out += "--------------------\n"
+		// Top 8 only for now (while testing)
+		combatants := s.GetSortedCombatants(CombatantSortOptions{
+			IncludeLimitBreak: false,
+		})[:8]
+
+		out += "\n# Combatants\n\n"
 		for _, val := range combatants {
-			out += fmt.Sprintf("%v:\n  Damage: %v\n  DPS: %v\n\n", val.Name, val.Damage, val.DPS)
+			out += fmt.Sprintf(
+				"%v (%v):\n  Damage: %v\n  DPS: %v\n\n",
+				val.Name,
+				val.Job,
+				val.Damage,
+				val.DPS,
+			)
 		}
 	}
 
