@@ -114,10 +114,14 @@ func (s *State) View() string {
 		out += fmt.Sprintf("Damage: %v\n", enc.Damage)
 		out += fmt.Sprintf("DPS: %v\n", enc.DPS)
 
-		// Top 8 only for now (while testing)
 		combatants := s.GetSortedCombatants(CombatantSortOptions{
 			IncludeLimitBreak: false,
-		})[:8]
+		})
+
+		// Top 8 only for now (while testing)
+		if len(combatants) > 8 {
+			combatants = combatants[:8]
+		}
 
 		out += "\n# Combatants\n\n"
 		for _, val := range combatants {
