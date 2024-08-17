@@ -20,12 +20,13 @@ type Zone struct {
 // Combatant can hold a lot of stats, so will try to keep it simple to what's most important for TUI.
 // Everything comes in as a string, so any math will need to cast the numbers first.
 type Combatant struct {
-	Name        string `json:"name"`
-	Damage      string `json:"damage"`
-	DPS         string `json:"dps"`
-	Job         string `json:"Job"`
-	Deaths      string `json:"deaths"`
-	CritPercent string `json:"crithit%"`
+	Name          string `json:"name"`
+	Damage        string `json:"damage"`
+	DamagePercent string `json:"damage%"`
+	DPS           string `json:"dps"`
+	Job           string `json:"Job"`
+	Deaths        string `json:"deaths"`
+	CritPercent   string `json:"crithit%"`
 
 	/* Example Combatant Data
 	"absorbHeal": "0",
@@ -165,7 +166,7 @@ type Encounter struct {
 }
 
 type CombatData struct {
-	IsActive interface{} `json:"isActive"`
+	IsActive string `json:"isActive"`
 
 	// Encounter includes party-wide stats for the current fight.
 	Encounter Encounter `json:"Encounter"`

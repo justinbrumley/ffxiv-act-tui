@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -78,7 +77,7 @@ func (s *State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return s, tick()
 			}
 
-			logMessage(payload)
+			// logMessage(payload)
 			s.handleMessage(payload)
 		}
 
@@ -96,44 +95,4 @@ func (s *State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return s, nil
-}
-
-// View renders the DPS meter.
-func (s *State) View() string {
-	out := "TUI Meter\n"
-
-	if s.PrimaryPlayer != nil {
-		out += fmt.Sprintf("Current Player: %s\n", s.PrimaryPlayer.Name)
-	}
-
-	// Encounter Details
-	if s.CombatData != nil {
-		enc := s.CombatData.Encounter
-
-		out += "\n# Encounter\n\n"
-		out += fmt.Sprintf("Damage: %v\n", enc.Damage)
-		out += fmt.Sprintf("DPS: %v\n", enc.DPS)
-
-		combatants := s.GetSortedCombatants(CombatantSortOptions{
-			IncludeLimitBreak: false,
-		})
-
-		// Top 8 only for now (while testing)
-		if len(combatants) > 8 {
-			combatants = combatants[:8]
-		}
-
-		out += "\n# Combatants\n\n"
-		for _, val := range combatants {
-			out += fmt.Sprintf(
-				"%v (%v):\n  Damage: %v\n  DPS: %v\n\n",
-				val.Name,
-				val.Job,
-				val.Damage,
-				val.DPS,
-			)
-		}
-	}
-
-	return out
 }
