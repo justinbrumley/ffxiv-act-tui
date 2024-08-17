@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	ws "github.com/gorilla/websocket"
 )
 
@@ -18,35 +20,51 @@ type Payload struct {
 	Message     Message `json:"msg"`
 }
 
+var tuiState State
 var socketUrl string
 
 func init() {
-	fmt.Println("Setting up vars...")
-
 	socketUrl = os.Getenv("SOCKET_URL")
 	if socketUrl == "" {
 		socketUrl = "ws://localhost:10501/MiniParse"
 	}
 }
 
+var conn *ws.Conn
+
 func main() {
 	defer logFile.Close()
 
-	fmt.Println("Connecting to ACT socket server...")
-
-	headers := http.Header{}
+	var err error
 	dialer := ws.Dialer{}
-	conn, resp, err := dialer.Dial(socketUrl, headers)
+	conn, _, err = dialer.Dial(socketUrl, http.Header{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	if resp.StatusCode != 101 {
-		log.Fatal("Did not receive 101 status code when dialing socket server")
+	p := tea.NewProgram(NewState(), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	for {
+func (s *State) Init() tea.Cmd {
+	return tick()
+}
+
+type tickMsg time.Time
+
+func tick() tea.Cmd {
+	return tea.Tick(time.Second/60, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
+// Update responds to key presses, and keeps the state up-to-date.
+func (s *State) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tickMsg:
 		msgType, reader, err := conn.NextReader()
 		if err != nil {
 			log.Fatal(err)
@@ -57,11 +75,55 @@ func main() {
 			payload := &Payload{}
 			decoder := json.NewDecoder(reader)
 			if err := decoder.Decode(&payload); err != nil {
-				continue
+				return s, tick()
 			}
 
 			logMessage(payload)
-			handleMessage(payload)
+			s.handleMessage(payload)
+		}
+
+		return s, tick()
+
+	case tea.KeyMsg:
+		{
+			switch msg.String() {
+			case "ctrl+c", "q":
+				{
+					return s, tea.Quit
+				}
+			}
 		}
 	}
+
+	return s, nil
+}
+
+// View renders the DPS meter.
+func (s *State) View() string {
+	out := "TUI Meter\n"
+
+	if s.PrimaryPlayer != nil {
+		out += fmt.Sprintf("Current Player: %s\n", s.PrimaryPlayer.Name)
+	}
+
+	// Encounter Details
+	if s.CombatData != nil {
+		enc := s.CombatData.Encounter
+
+		out += "\n--------------------\n"
+		out += "# Encounter\n"
+		out += "--------------------\n"
+		out += fmt.Sprintf("Damage: %v\n", enc.Damage)
+		out += fmt.Sprintf("DPS: %v\n", enc.DPS)
+
+		combatants := s.CombatData.Combatants
+		out += "\n--------------------\n"
+		out += "# Combatants\n"
+		out += "--------------------\n"
+		for _, val := range combatants {
+			out += fmt.Sprintf("%v:\n  Damage: %v\n  DPS: %v\n\n", val.Name, val.Damage, val.DPS)
+		}
+	}
+
+	return out
 }

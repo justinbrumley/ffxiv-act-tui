@@ -19,7 +19,7 @@ type Zone struct {
 // Everything comes in as a string, so any math will need to cast the numbers first.
 type Combatant struct {
 	Name        string `json:"name"`
-	TotalDamage string `json:"damage"`
+	Damage      string `json:"damage"`
 	DPS         string `json:"dps"`
 	Job         string `json:"Job"`
 	Deaths      string `json:"deaths"`
@@ -176,21 +176,20 @@ type State struct {
 	PrimaryPlayer *Player
 	Players       map[uint]Player
 	CurrentZone   *Zone
+	CombatData    *CombatData
 }
 
-var state *State
+func NewState() *State {
+	return &State{
+		Players: make(map[uint]Player),
+	}
+}
 
 const (
 	MessageType_ChangeZone   = "ChangeZone"
 	MessageType_SendCharName = "SendCharName"
 	MessageType_CombatData   = "CombatData"
 )
-
-func init() {
-	state = &State{
-		Players: make(map[uint]Player),
-	}
-}
 
 // parseZone parses zone data from message.
 // Example message: map[type:ChangeZone zoneID:340 zoneName:The Lavender Beds]
@@ -237,48 +236,53 @@ func parseCombatData(msg map[string]interface{}) (*CombatData, error) {
 	return data, nil
 }
 
-func handleMessage(payload *Payload) error {
+func (s *State) handleMessage(payload *Payload) error {
 	switch payload.MessageType {
 	// Parse Zone and set current zone in state
 	case MessageType_ChangeZone:
-		zone, err := parseZone(payload.Message)
-		if err != nil {
-			return err
-		}
+		{
+			zone, err := parseZone(payload.Message)
+			if err != nil {
+				return err
+			}
 
-		state.CurrentZone = zone
-		fmt.Printf("Parsed Zone: %v\n", zone)
+			s.CurrentZone = zone
+		}
 
 	// Parse player information
 	case MessageType_SendCharName:
-		player, err := parsePlayer(payload.Message)
-		if err != nil {
-			return err
-		}
+		{
+			player, err := parsePlayer(payload.Message)
+			if err != nil {
+				return err
+			}
 
-		state.Players[player.ID] = *player
-		if t, ok := payload.Message["type"]; ok && t.(string) == "ChangePrimaryPlayer" {
-			state.PrimaryPlayer = player
+			s.Players[player.ID] = *player
+			if t, ok := payload.Message["type"]; ok && t.(string) == "ChangePrimaryPlayer" {
+				s.PrimaryPlayer = player
+			}
 		}
-
-		fmt.Printf("Parsed Player: %v\n", player)
 
 	case MessageType_CombatData:
-		data, err := parseCombatData(payload.Message)
-		if err != nil {
-			fmt.Printf("Error parsing combat data: %v\n", err)
-			return err
-		}
+		{
+			data, err := parseCombatData(payload.Message)
+			if err != nil {
+				fmt.Printf("Error parsing combat data: %v\n", err)
+				return err
+			}
 
-		fmt.Printf("Parsed combat data: %v\n", data)
+			s.CombatData = data
+		}
 
 	default:
-		fmt.Printf("Unrecognized message received: %v\n", payload.MessageType)
-		fmt.Printf("[")
-		for key, _ := range payload.Message {
-			fmt.Printf(" %v ", key)
+		{
+			fmt.Printf("Unrecognized message received: %v\n", payload.MessageType)
+			fmt.Printf("[")
+			for key, _ := range payload.Message {
+				fmt.Printf(" %v ", key)
+			}
+			fmt.Println("]")
 		}
-		fmt.Println("]")
 	}
 
 	return nil
