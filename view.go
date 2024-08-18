@@ -83,7 +83,7 @@ func (s *State) View() string {
 		}
 
 		combatantStats := ""
-		combatantBoxWidth := lipgloss.Width(out) - 2
+		combatantBoxWidth := lipgloss.Width(out) + 10
 		meterWidth := combatantBoxWidth - 4
 
 		for i, c := range combatants {
@@ -136,5 +136,6 @@ func (s *State) View() string {
 		Width(width - (PaddingX * 2)).
 		Height(height - (PaddingY * 2)).
 		MaxHeight(height). // Keep top visible when list is longer than viewport
+		Align(lipgloss.Center).
 		Render(out)
 }
