@@ -55,7 +55,9 @@ func (s *State) Init() tea.Cmd {
 type tickMsg time.Time
 
 func tick() tea.Cmd {
-	return tea.Tick(time.Second/60, func(t time.Time) tea.Msg {
+	// TODO: Instead of relying on a ticker to check for socket messages,
+	//       need to play around with channels or something to keep things up to date (if a channel is even necessary).
+	return tea.Tick(time.Second/1e3, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }

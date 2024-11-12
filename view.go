@@ -77,13 +77,17 @@ func (s *State) View() string {
 			IncludeLimitBreak: false,
 		})
 
-		// Top 8 only for now (while testing)
-		if len(combatants) > 8 {
-			combatants = combatants[:8]
+		combatantBoxHeight := height - lipgloss.Height(out) - 4
+		combatantBoxWidth := lipgloss.Width(out) + 10
+		maxNumPlayers := (combatantBoxHeight - 4) / 3
+
+		// Attempt to scale # of players based on available height
+		if len(combatants) > maxNumPlayers {
+			combatants = combatants[:maxNumPlayers]
 		}
 
 		combatantStats := ""
-		combatantBoxWidth := lipgloss.Width(out) + 10
+
 		meterWidth := combatantBoxWidth - 4
 
 		for i, c := range combatants {
@@ -124,6 +128,7 @@ func (s *State) View() string {
 
 		out += AddTitleToBorder(
 			baseStyle.
+				Height(combatantBoxHeight).
 				Width(combatantBoxWidth).
 				MarginTop(1).
 				Render(combatantStats),
